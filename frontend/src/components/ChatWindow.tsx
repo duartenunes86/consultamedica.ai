@@ -7,11 +7,12 @@ import type { DisplayMessage, ChatResponse } from '../types'
 interface Props {
   messages: DisplayMessage[]
   loading: boolean
+  preparingConclusion: boolean
   response: ChatResponse | null
   onReset: () => void
 }
 
-export function ChatWindow({ messages, loading, response, onReset }: Props) {
+export function ChatWindow({ messages, loading, preparingConclusion, response, onReset }: Props) {
   const bottomRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -36,8 +37,11 @@ export function ChatWindow({ messages, loading, response, onReset }: Props) {
 
       {loading && (
         <div className="flex justify-start">
-          <div className="bg-white rounded-2xl rounded-bl-sm shadow-sm border border-slate-100 px-4 py-3">
-            <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />
+          <div className="bg-white rounded-2xl rounded-bl-sm shadow-sm border border-slate-100 px-4 py-3 flex items-center gap-2">
+            <Loader2 className="w-4 h-4 text-blue-500 animate-spin flex-shrink-0" />
+            {preparingConclusion && (
+              <span className="text-sm text-slate-500">Preparando o resumo da consulta</span>
+            )}
           </div>
         </div>
       )}

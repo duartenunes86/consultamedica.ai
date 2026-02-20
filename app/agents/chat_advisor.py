@@ -59,16 +59,32 @@ REGRAS DE ESTILO:
 - Explique termos médicos quando necessário
 - NÃO adicione avisos genéricos como "não sou médico" — o sistema já cuida disso
 
-CALIBRAÇÃO DE URGÊNCIA — seja preciso, não excessivamente cauteloso:
-- emergency: pronto-socorro agora (risco de vida: dor no peito + dispneia, AVC, anafilaxia, inconsciência)
-- urgent: médico nos próximos dias — inclui:
-    * infecção ativa, dor intensa, sintomas a piorar rapidamente
-    * sintomas novos e inexplicados que requerem exames para excluir causas sérias,
-      mesmo que não doam nem piorem (ex: erupção cutânea generalizada nova, perda de peso
-      inexplicada, febre sem foco, linfadenopatia, fadiga intensa de início recente)
-    * suspeita de IST ou infecção sistémica que requer tratamento atempado
-- routine: consulta de rotina (condições crónicas estáveis, sintomas minor sem piora, check-ups,
-  disfunção erétil crónica estável, queda de cabelo gradual)"""
+CALIBRAÇÃO DE URGÊNCIA — aplique estas regras em ordem, parando na primeira que se aplicar:
+
+1. emergency → pronto-socorro imediato:
+   - Dor no peito + dispneia, dor no braço/mandíbula
+   - "Pior dor de cabeça da vida" de início súbito (suspeita de hemorragia subaracnoideia)
+   - Sinais de AVC: queda facial, fraqueza unilateral, fala arrastada
+   - Dificuldade grave para respirar ou engolir
+   - Anafilaxia, perda de consciência
+
+2. urgent → médico nos próximos dias (máximo 1 semana):
+   - Qualquer sintoma NOVO (sem episódios prévios semelhantes documentados) com duração >7 dias
+     sem causa claramente estabelecida — independentemente da intensidade ou de não estar a piorar
+   - Sintoma que pode ser induzido por medicação com efeitos cardiovasculares ou neurológicos
+     (ex: estimulantes, antipsicóticos, corticoides) → requer revisão terapêutica e monitorização
+   - Infecção ativa, dor intensa, ou qualquer sintoma a piorar progressivamente
+   - Sintomas sistémicos inexplicados mesmo que estáveis: erupção cutânea nova, perda de peso,
+     febre sem foco, linfadenopatia, fadiga intensa de início recente
+   - Suspeita de IST ou infecção que requer tratamento atempado
+
+3. routine → APENAS nestas situações específicas:
+   - Condição crónica já diagnosticada, estável e bem controlada (ex: HTA controlada, diabetes
+     estável, enxaqueca conhecida com padrão habitual)
+   - Sintoma minor com duração <7 dias, claramente benigno (ex: constipação comum ligeira)
+   - Check-up preventivo ou renovação de receita
+   - NUNCA use routine para um sintoma novo sem diagnóstico estabelecido, mesmo que a dor
+     seja moderada, mesmo que não esteja a piorar, mesmo que não haja outros sinais de alarme"""
 
 
 async def get_chat_advice(

@@ -11,7 +11,7 @@ export interface ChatRequest {
 
 export type QuestionType = 'text' | 'age' | 'gender'
 export type UrgencyLevel = 'emergency' | 'urgent' | 'routine'
-export type ResponseType = 'question' | 'consultation'
+export type ResponseType = 'question' | 'ready' | 'consultation'
 
 export interface ChatResponse {
   type: ResponseType
@@ -19,10 +19,11 @@ export interface ChatResponse {
   question?: string
   question_type?: QuestionType
   options?: string[]
+  // ready fields
+  patient_summary?: string
   // consultation fields
   advice?: string
   urgency?: UrgencyLevel
-  consultation?: string
 }
 
 export interface DisplayMessage {

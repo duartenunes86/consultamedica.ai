@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react'
 import { Header } from './components/Header'
 import { ChatWindow } from './components/ChatWindow'
 import { QuestionInput } from './components/QuestionInput'
-import { sendMessage } from './api/chat'
+import { sendMessage, sendAdvice } from './api/chat'
 import type { ChatMessage, ChatResponse, DisplayMessage, QuestionType } from './types'
 
 function makeId() {
@@ -13,6 +13,7 @@ function App() {
   const [displayMessages, setDisplayMessages] = useState<DisplayMessage[]>([])
   const [apiMessages, setApiMessages] = useState<ChatMessage[]>([])
   const [loading, setLoading] = useState(false)
+  const [preparingConclusion, setPreparingConclusion] = useState(false)
   const [response, setResponse] = useState<ChatResponse | null>(null)
   const [questionType, setQuestionType] = useState<QuestionType>('text')
   const [options, setOptions] = useState<string[] | undefined>()
@@ -31,6 +32,7 @@ function App() {
     setDisplayMessages((prev) => [...prev, userDisplayMsg])
     setApiMessages(nextApiMessages)
     setLoading(true)
+    setPreparingConclusion(false)
     setResponse(null)
 
     try {
@@ -50,8 +52,17 @@ function App() {
         setApiMessages((prev) => [...prev, assistantApiMsg])
         setQuestionType(data.question_type ?? 'text')
         setOptions(data.options)
-      } else if (data.type === 'consultation') {
-        setResponse(data)
+        setLoading(false)
+      } else if (data.type === 'ready' && data.patient_summary) {
+        // Intake complete — show "Preparando..." immediately while fetching advice
+        setPreparingConclusion(true)
+        try {
+          const advice = await sendAdvice(data.patient_summary)
+          setResponse(advice)
+        } finally {
+          setPreparingConclusion(false)
+          setLoading(false)
+        }
       }
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : 'Erro desconhecido'
@@ -63,7 +74,6 @@ function App() {
           content: `Desculpe, ocorreu um erro: ${errMsg}. Tente novamente.`,
         },
       ])
-    } finally {
       setLoading(false)
     }
   }, [loading, apiMessages])
@@ -84,6 +94,7 @@ function App() {
       <ChatWindow
         messages={displayMessages}
         loading={loading}
+        preparingConclusion={preparingConclusion}
         response={response}
         onReset={handleReset}
       />
@@ -91,7 +102,7 @@ function App() {
         <QuestionInput
           questionType={questionType}
           options={options}
-          loading={loading}
+          loading={loading || preparingConclusion}
           onSubmit={handleSend}
         />
       )}

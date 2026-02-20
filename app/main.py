@@ -19,6 +19,7 @@ from app.config import get_settings
 from app.medical_apis.openfda import lookup_drug_safety
 from app.medical_apis.rxnorm import lookup_drug_info
 from app.models.schemas import (
+    ChatAdviceRequest,
     ChatRequest,
     ChatResponse,
     ConsultationRequest,
@@ -211,18 +212,17 @@ async def consult_stream(request: ConsultationRequest):
 
 @app.post("/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
-    """Conversational endpoint — gathers symptom details before running the full agent pipeline.
+    """Conversational intake endpoint — asks one question at a time.
 
-    The client keeps the full message history and sends it on each turn.
-    The response is either:
-      {"type": "question", "question": "..."}   — show this to the patient and send again
-      {"type": "consultation", "consultation": {...}}  — final medical analysis
+    Returns either:
+      {"type": "question", "question": "..."}        — show to patient and send again
+      {"type": "ready", "patient_summary": "..."}    — intake complete; call /chat/advice next
     """
     if not request.messages:
         raise HTTPException(status_code=422, detail="a lista de mensagens não pode estar vazia")
 
     settings = get_settings()
-    intake_provider = await get_provider(settings.agent_providers["triage"])  # reuse any provider
+    intake_provider = await get_provider(settings.agent_providers["triage"])
 
     intake_result = await run_intake(
         provider=intake_provider,
@@ -242,16 +242,23 @@ async def chat(request: ChatRequest):
             options=intake_result.get("options"),
         )
 
-    # action == "consult" — single conversational advisor (fast, friendly)
+    # action == "consult" — signal frontend to show "Preparando..." and call /chat/advice
     patient_summary = intake_result.get("patient_summary", "")
     if not patient_summary:
         patient_summary = " ".join(m.content for m in request.messages if m.role == "user")
 
+    return ChatResponse(type="ready", patient_summary=patient_summary)
+
+
+@app.post("/chat/advice", response_model=ChatResponse)
+async def chat_advice(request: ChatAdviceRequest):
+    """Generates the final conversational advice from a collected patient summary."""
+    settings = get_settings()
     advisor_provider = await get_provider(settings.agent_providers["triage"])
     try:
         result = await get_chat_advice(
             provider=advisor_provider,
-            patient_summary=patient_summary,
+            patient_summary=request.patient_summary,
             medical_history=request.medical_history,
             current_medications=request.current_medications,
         )

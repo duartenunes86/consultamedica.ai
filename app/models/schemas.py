@@ -52,13 +52,20 @@ class ChatRequest(BaseModel):
 
 
 class ChatResponse(BaseModel):
-    type: str = Field(..., description="'question' or 'consultation'")
+    type: str = Field(..., description="'question' | 'ready' | 'consultation'")
     question: str | None = Field(None, description="Next question to show the patient")
     question_type: str | None = Field(None, description="'age' | 'gender' | 'text' — hint for UI rendering")
     options: list[str] | None = Field(None, description="Selectable options (e.g. for gender question)")
+    patient_summary: str | None = Field(None, description="Collected summary (set when type='ready')")
     advice: str | None = Field(None, description="Conversational medical advice")
     urgency: str | None = Field(None, description="emergency | urgent | routine")
     consultation: ConsultationResponse | None = Field(None, description="Full result (only from /consult)")
+
+
+class ChatAdviceRequest(BaseModel):
+    patient_summary: str
+    medical_history: list[str] = Field(default_factory=list)
+    current_medications: list[str] = Field(default_factory=list)
 
 
 class IngestRequest(BaseModel):

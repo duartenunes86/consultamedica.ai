@@ -1,22 +1,13 @@
 import type { ChatMessage, ChatRequest, ChatResponse } from '../types'
 
-export async function sendMessage(
-  messages: ChatMessage[],
-  medicalHistory?: string,
-  currentMedications?: string,
-): Promise<ChatResponse> {
-  const body: ChatRequest = {
-    messages,
-    ...(medicalHistory && { medical_history: medicalHistory }),
-    ...(currentMedications && { current_medications: currentMedications }),
-  }
+const base = import.meta.env.VITE_API_URL ?? ''
 
-  const base = import.meta.env.VITE_API_URL ?? ''
+async function post(path: string, body: unknown): Promise<ChatResponse> {
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), 60000)
   let response: Response
   try {
-    response = await fetch(`${base}/chat`, {
+    response = await fetch(`${base}${path}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -34,4 +25,21 @@ export async function sendMessage(
   }
 
   return response.json() as Promise<ChatResponse>
+}
+
+export function sendMessage(messages: ChatMessage[]): Promise<ChatResponse> {
+  const body: ChatRequest = { messages }
+  return post('/chat', body)
+}
+
+export function sendAdvice(
+  patientSummary: string,
+  medicalHistory?: string[],
+  currentMedications?: string[],
+): Promise<ChatResponse> {
+  return post('/chat/advice', {
+    patient_summary: patientSummary,
+    ...(medicalHistory?.length && { medical_history: medicalHistory }),
+    ...(currentMedications?.length && { current_medications: currentMedications }),
+  })
 }

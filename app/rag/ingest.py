@@ -22,6 +22,8 @@ def chunk_text(text: str, chunk_size: int = 1000, overlap: int = 200) -> list[st
 def ingest_text(text: str, source: str = "manual") -> int:
     """Ingest a text document into the vector store. Returns number of chunks added."""
     collection = get_collection()
+    if collection is None:
+        return 0
     chunks = chunk_text(text)
 
     ids = []

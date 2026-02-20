@@ -4,7 +4,7 @@ from app.rag.embeddings import get_collection
 def query_medical_knowledge(query: str, n_results: int = 5) -> list[dict]:
     """Query the medical knowledge vector store for relevant context."""
     collection = get_collection()
-    if collection.count() == 0:
+    if collection is None or collection.count() == 0:
         return []
 
     results = collection.query(query_texts=[query], n_results=min(n_results, collection.count()))

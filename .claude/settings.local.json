@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(/home/duarte/Downloads/gr8doctor/venv/bin/pip install:*)",
+      "Bash(npm install)",
+      "Bash(echo:*)",
+      "Bash(snap list:*)",
+      "Bash(apt-cache show:*)",
+      "Bash(sudo -n apt-get install:*)",
+      "Bash(ls:*)",
+      "Bash(sort:*)",
+      "Bash(python3:*)",
+      "Bash(cat:*)"
+    ]
+  }
+}

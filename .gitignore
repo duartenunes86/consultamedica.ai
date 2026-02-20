@@ -1,0 +1,22 @@
+# Secrets
+.env
+
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# Data (large/generated files)
+data/chroma_db/
+data/medical_knowledge/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# Misc
+=1.0.0
+*.egg-info/
+.DS_Store

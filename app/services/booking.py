@@ -9,7 +9,7 @@ from app.config import get_settings
 logger = logging.getLogger(__name__)
 
 URGENCY_PT = {
-    "emergency": "EMERGÊNCIA — Ir imediatamente às urgências",
+    "emergency": "EMERGÊNCIA — Ir imediatamente ao pronto-socorro",
     "urgent": "URGENTE — Consultar médico nos próximos dias",
     "routine": "ROTINA — Consulta regular",
 }
@@ -177,7 +177,7 @@ def send_confirmation_to_patient(
       <div style="background: #fef9c3; border: 1px solid #fde68a; border-radius: 8px; padding: 12px; margin-top: 16px;">
         <p style="margin: 0; font-size: 13px; color: #854d0e;">
           <strong>Guarde este email.</strong> Na hora marcada, clique no botão "Entrar na videoconsulta".
-          Não é necessário instalar nada — funciona directamente no browser.
+          Não é necessário instalar nada — funciona diretamente no browser.
           A sala ficará disponível assim que o médico entrar.
         </p>
       </div>

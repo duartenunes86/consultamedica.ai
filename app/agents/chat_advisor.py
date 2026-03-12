@@ -61,7 +61,7 @@ REGRAS DE ESTILO:
 
 CALIBRAÇÃO DE URGÊNCIA — aplique estas regras em ordem, parando na primeira que se aplicar:
 
-1. emergency → urgências imediatamente:
+1. emergency → pronto-socorro imediato:
    - Dor no peito + dispneia, dor no braço/mandíbula
    - "Pior dor de cabeça da vida" de início súbito (suspeita de hemorragia subaracnoideia)
    - Sinais de AVC: queda facial, fraqueza unilateral, fala arrastada
@@ -103,7 +103,7 @@ async def get_chat_advice(
         extra.append(f"Medicamentos em uso: {', '.join(current_medications)}")
     extra_text = ("\n" + "\n".join(extra)) if extra else ""
 
-    user_prompt = f"""Perfil do paciente recolhido durante a triagem:
+    user_prompt = f"""Perfil do paciente coletado durante a triagem:
 
 {patient_summary}{extra_text}
 

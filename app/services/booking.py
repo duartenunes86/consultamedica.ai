@@ -9,8 +9,8 @@ from app.config import get_settings
 logger = logging.getLogger(__name__)
 
 URGENCY_PT = {
-    "emergency": "EMERGENCIA — Ir imediatamente ao pronto-socorro",
-    "urgent": "URGENTE — Consultar medico nos proximos dias",
+    "emergency": "EMERGÊNCIA — Ir imediatamente às urgências",
+    "urgent": "URGENTE — Consultar médico nos próximos dias",
     "routine": "ROTINA — Consulta regular",
 }
 
@@ -129,11 +129,11 @@ def send_booking_to_doctor(
 
       {_appointment_box_html(datetime_pt, video_url)}
 
-      <h3 style="margin-top: 24px; color: #1e40af;">Perfil clinico recolhido pela IA</h3>
+      <h3 style="margin-top: 24px; color: #1e40af;">Perfil clínico recolhido pela IA</h3>
       <div style="background: #f8fafc; border-left: 4px solid #3b82f6; padding: 12px;
                   white-space: pre-wrap; font-size: 14px; line-height: 1.6;">{patient_summary}</div>
 
-      <h3 style="margin-top: 24px; color: #1e40af;">Orientacao gerada pela IA</h3>
+      <h3 style="margin-top: 24px; color: #1e40af;">Orientação gerada pela IA</h3>
       <div style="background: #f0fdf4; border-left: 4px solid #22c55e; padding: 12px;
                   white-space: pre-wrap; font-size: 14px; line-height: 1.6;">{advice}</div>
 
@@ -165,25 +165,25 @@ def send_confirmation_to_patient(
 
     html = f"""
     <html><body style="font-family: Arial, sans-serif; color: #333; max-width: 680px; margin: auto;">
-      <h2 style="color: #1e40af;">Ola, {name}!</h2>
+      <h2 style="color: #1e40af;">Olá, {name}!</h2>
       <p>A sua videoconsulta foi agendada com sucesso.</p>
 
       {_appointment_box_html(datetime_pt, video_url)}
 
-      <p><strong>Urgencia avaliada pela IA:</strong>
+      <p><strong>Urgência avaliada pela IA:</strong>
         <span style="color: {color}; font-weight: bold;">{urgency_label}</span>
       </p>
 
       <div style="background: #fef9c3; border: 1px solid #fde68a; border-radius: 8px; padding: 12px; margin-top: 16px;">
         <p style="margin: 0; font-size: 13px; color: #854d0e;">
-          <strong>Guarde este email.</strong> Na hora marcada, clique no botao "Entrar na videoconsulta".
-          Nao e necessario instalar nada — funciona diretamente no browser.
-          A sala ficara disponivel assim que o medico entrar.
+          <strong>Guarde este email.</strong> Na hora marcada, clique no botão "Entrar na videoconsulta".
+          Não é necessário instalar nada — funciona directamente no browser.
+          A sala ficará disponível assim que o médico entrar.
         </p>
       </div>
 
       <p style="margin-top: 24px; color: #6b7280; font-size: 12px; border-top: 1px solid #e2e8f0; padding-top: 12px;">
-        ConsultaMedica.ai — Email automatico, por favor nao responda.
+        ConsultaMedica.ai — Email automático, por favor não responda.
       </p>
     </body></html>
     """

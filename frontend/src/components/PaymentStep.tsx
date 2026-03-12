@@ -110,7 +110,7 @@ export function PaymentStep({ clientSecret, paymentIntentId, onSuccess, onBack }
             theme: 'stripe',
             variables: { colorPrimary: '#1e40af', borderRadius: '8px' },
           },
-          locale: 'pt-BR',
+          locale: 'pt-PT',
         }}
       >
         <CheckoutForm paymentIntentId={paymentIntentId} onSuccess={onSuccess} />

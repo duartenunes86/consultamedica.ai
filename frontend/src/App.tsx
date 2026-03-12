@@ -15,6 +15,7 @@ function App() {
   const [loading, setLoading] = useState(false)
   const [preparingConclusion, setPreparingConclusion] = useState(false)
   const [response, setResponse] = useState<ChatResponse | null>(null)
+  const [patientSummary, setPatientSummary] = useState('')
   const [questionType, setQuestionType] = useState<QuestionType>('text')
   const [options, setOptions] = useState<string[] | undefined>()
 
@@ -56,6 +57,7 @@ function App() {
       } else if (data.type === 'ready' && data.patient_summary) {
         // Intake complete — show "Preparando..." immediately while fetching advice
         setPreparingConclusion(true)
+        setPatientSummary(data.patient_summary)
         try {
           const advice = await sendAdvice(data.patient_summary)
           setResponse(advice)
@@ -82,6 +84,7 @@ function App() {
     setDisplayMessages([])
     setApiMessages([])
     setResponse(null)
+    setPatientSummary('')
     setQuestionType('text')
     setOptions(undefined)
   }, [])
@@ -96,6 +99,7 @@ function App() {
         loading={loading}
         preparingConclusion={preparingConclusion}
         response={response}
+        patientSummary={patientSummary}
         onReset={handleReset}
       />
       {!isConsultationDone && (

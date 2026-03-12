@@ -9,10 +9,11 @@ interface Props {
   loading: boolean
   preparingConclusion: boolean
   response: ChatResponse | null
+  patientSummary: string
   onReset: () => void
 }
 
-export function ChatWindow({ messages, loading, preparingConclusion, response, onReset }: Props) {
+export function ChatWindow({ messages, loading, preparingConclusion, response, patientSummary, onReset }: Props) {
   const bottomRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -51,6 +52,7 @@ export function ChatWindow({ messages, loading, preparingConclusion, response, o
           <ConsultationCard
             advice={response.advice}
             urgency={response.urgency}
+            patientSummary={patientSummary}
             onReset={onReset}
           />
         </div>

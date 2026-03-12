@@ -1,14 +1,16 @@
 import { RefreshCw } from 'lucide-react'
 import type { UrgencyLevel } from '../types'
 import { UrgencyBanner } from './UrgencyBanner'
+import { BookingForm } from './BookingForm'
 
 interface Props {
   advice: string
   urgency: UrgencyLevel
+  patientSummary: string
   onReset: () => void
 }
 
-export function ConsultationCard({ advice, urgency, onReset }: Props) {
+export function ConsultationCard({ advice, urgency, patientSummary, onReset }: Props) {
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 space-y-4">
       <UrgencyBanner urgency={urgency} />
@@ -19,6 +21,8 @@ export function ConsultationCard({ advice, urgency, onReset }: Props) {
         </h2>
         <p className="text-slate-700 text-sm leading-relaxed whitespace-pre-wrap">{advice}</p>
       </div>
+
+      <BookingForm advice={advice} urgency={urgency} patientSummary={patientSummary} />
 
       <p className="text-xs text-slate-400 border-t border-slate-100 pt-3">
         Esta orientação é gerada por IA e não substitui avaliação médica presencial.

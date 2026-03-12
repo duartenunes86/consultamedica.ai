@@ -19,6 +19,10 @@ from app.config import get_settings
 from app.medical_apis.openfda import lookup_drug_safety
 from app.medical_apis.rxnorm import lookup_drug_info
 from app.models.schemas import (
+    AddSlotsRequest,
+    AvailabilitySlot,
+    BookingRequest,
+    BookingResponse,
     ChatAdviceRequest,
     ChatRequest,
     ChatResponse,
@@ -26,6 +30,8 @@ from app.models.schemas import (
     ConsultationResponse,
     IngestRequest,
     IngestResponse,
+    PaymentIntentRequest,
+    PaymentIntentResponse,
 )
 from app.providers.factory import check_ollama_health, get_provider
 from app.rag.ingest import seed_knowledge
@@ -44,7 +50,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.allowed_origins,
+    allow_origins=settings.cors_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -270,6 +276,114 @@ async def chat_advice(request: ChatAdviceRequest):
         type="consultation",
         advice=result.get("response", ""),
         urgency=result.get("urgency", "routine"),
+    )
+
+
+@app.post("/payment/intent", response_model=PaymentIntentResponse)
+async def create_payment_intent(request: PaymentIntentRequest):
+    """Create a Stripe PaymentIntent for the consultation fee (R$ 49,99)."""
+    from app.services.payment import create_payment_intent
+    try:
+        result = create_payment_intent(patient_name=request.name, patient_email=request.email)
+    except RuntimeError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except Exception as e:
+        logger.error(f"Payment intent creation failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Falha ao criar pagamento: {e}")
+    return PaymentIntentResponse(**result)
+
+
+@app.get("/availability", response_model=list[AvailabilitySlot])
+async def get_availability():
+    """Return available appointment slots (at least 24h in the future, not yet booked)."""
+    from app.services.availability import get_available_slots
+    return get_available_slots()
+
+
+@app.get("/availability/slots/all")
+async def get_all_slots(api_key: str = Query(default="")):
+    """(Doctor/Admin) Return all slots including booked ones."""
+    from app.services.availability import get_all_slots as _get_all
+    settings = get_settings()
+    if settings.admin_api_key and api_key != settings.admin_api_key:
+        raise HTTPException(status_code=403, detail="Chave de administração inválida.")
+    return _get_all()
+
+
+@app.post("/availability/slots", response_model=list[AvailabilitySlot])
+async def add_availability_slots(request: AddSlotsRequest):
+    """(Doctor/Admin) Add available appointment slots."""
+    from app.services.availability import add_slots
+    settings = get_settings()
+    if settings.admin_api_key and request.api_key != settings.admin_api_key:
+        raise HTTPException(status_code=403, detail="Chave de administração inválida.")
+    try:
+        return add_slots(request.datetimes)
+    except Exception as e:
+        raise HTTPException(status_code=422, detail=f"Erro ao adicionar horários: {e}")
+
+
+@app.delete("/availability/slots/{slot_id}", status_code=204)
+async def delete_availability_slot(slot_id: str, api_key: str = Query(default="")):
+    """(Doctor/Admin) Remove an availability slot."""
+    from app.services.availability import delete_slot
+    settings = get_settings()
+    if settings.admin_api_key and api_key != settings.admin_api_key:
+        raise HTTPException(status_code=403, detail="Chave de administração inválida.")
+    delete_slot(slot_id)
+
+
+@app.post("/book-consultation", response_model=BookingResponse)
+async def book_consultation(request: BookingRequest):
+    """Verify payment, reserve a slot, generate a Jitsi room, and notify doctor + patient."""
+    from app.services.availability import book_slot
+    from app.services.booking import process_booking
+    from app.services.payment import verify_payment
+
+    # Verify Stripe payment before doing anything
+    try:
+        paid = verify_payment(request.payment_intent_id)
+    except Exception as e:
+        logger.error(f"Payment verification error: {e}")
+        raise HTTPException(status_code=502, detail=f"Erro ao verificar pagamento: {e}")
+    if not paid:
+        raise HTTPException(status_code=402, detail="Pagamento não foi concluído. Por favor tente novamente.")
+
+    # Reserve the chosen slot (validates 24h rule and availability)
+    try:
+        slot = book_slot(request.slot_id)
+    except ValueError as e:
+        # Slot no longer available — refund automatically
+        if request.payment_intent_id and request.payment_intent_id != "dev-skip":
+            try:
+                from app.services.payment import refund_payment
+                refund_payment(request.payment_intent_id)
+                logger.info("Refund issued for %s (slot unavailable)", request.payment_intent_id)
+            except Exception as re:
+                logger.error("Refund failed for %s: %s", request.payment_intent_id, re)
+        raise HTTPException(status_code=409, detail=f"Horário já não disponível. O pagamento foi reembolsado automaticamente.")
+
+    slot_datetime = slot["datetime"]
+
+    try:
+        video_url = process_booking(
+            name=request.name,
+            email=request.email,
+            phone=request.phone,
+            urgency=request.urgency,
+            advice=request.advice,
+            patient_summary=request.patient_summary,
+            slot_datetime=slot_datetime,
+        )
+    except Exception as e:
+        logger.error(f"Booking failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Falha ao processar pedido de consulta: {e}")
+
+    return BookingResponse(
+        status="ok",
+        message="Videoconsulta agendada com sucesso.",
+        video_url=video_url,
+        slot_datetime=slot_datetime,
     )
 
 

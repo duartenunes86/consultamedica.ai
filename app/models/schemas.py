@@ -77,3 +77,43 @@ class IngestResponse(BaseModel):
     status: str
     documents_added: int
     source: str
+
+
+class AvailabilitySlot(BaseModel):
+    id: str
+    datetime: str = Field(..., description="ISO 8601 datetime string")
+    booked: bool = False
+
+
+class AddSlotsRequest(BaseModel):
+    datetimes: list[str] = Field(..., description="List of ISO 8601 datetime strings to add")
+    api_key: str = Field(default="", description="Admin API key")
+
+
+class PaymentIntentRequest(BaseModel):
+    name: str = Field(..., description="Patient name (for Stripe metadata)")
+    email: str = Field(..., description="Patient email (for Stripe receipt)")
+
+
+class PaymentIntentResponse(BaseModel):
+    client_secret: str
+    payment_intent_id: str
+    amount_brl: str = "49,99"
+
+
+class BookingRequest(BaseModel):
+    name: str = Field(..., description="Patient full name")
+    email: str = Field(..., description="Patient email")
+    phone: str = Field(..., description="Patient phone number")
+    urgency: str = Field(..., description="emergency | urgent | routine")
+    advice: str = Field(..., description="AI-generated medical advice")
+    patient_summary: str = Field(..., description="Full symptom profile collected during intake")
+    slot_id: str = Field(..., description="ID of the chosen availability slot")
+    payment_intent_id: str = Field(..., description="Stripe PaymentIntent ID to verify payment")
+
+
+class BookingResponse(BaseModel):
+    status: str
+    message: str
+    video_url: str
+    slot_datetime: str = Field(..., description="Confirmed appointment datetime (ISO 8601)")

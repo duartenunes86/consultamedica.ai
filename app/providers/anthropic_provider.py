@@ -1,7 +1,15 @@
+import logging
+
 import anthropic
 
 from app.config import get_settings
 from app.providers.base import ModelProvider
+
+logger = logging.getLogger(__name__)
+
+# Preços Claude Sonnet 4.6 (USD por token)
+_COST_INPUT = 3.00 / 1_000_000
+_COST_OUTPUT = 15.00 / 1_000_000
 
 
 class AnthropicProvider(ModelProvider):
@@ -31,6 +39,16 @@ class AnthropicProvider(ModelProvider):
                 "input_schema": output_schema,
             }],
             tool_choice={"type": "tool", "name": tool_name},
+        )
+
+        usage = response.usage
+        cost = usage.input_tokens * _COST_INPUT + usage.output_tokens * _COST_OUTPUT
+        logger.info(
+            "[tokens] tool=%s  in=%d  out=%d  custo=$%.5f",
+            tool_name,
+            usage.input_tokens,
+            usage.output_tokens,
+            cost,
         )
 
         for block in response.content:

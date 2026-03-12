@@ -31,3 +31,26 @@ export interface DisplayMessage {
   role: 'user' | 'assistant'
   content: string
 }
+
+export interface AvailabilitySlot {
+  id: string
+  datetime: string  // ISO 8601
+  booked: boolean
+}
+
+export interface BookingRequest {
+  name: string
+  email: string
+  phone: string
+  urgency: UrgencyLevel
+  advice: string
+  patient_summary: string
+  slot_id: string
+}
+
+export interface BookingResponse {
+  status: string
+  message: string
+  video_url: string
+  slot_datetime: string
+}

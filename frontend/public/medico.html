@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Painel do Médico — consultamedica.ai</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #f1f5f9; color: #1e293b; }
+
+    header { background: #1e40af; color: white; padding: 0.85rem 1.25rem;
+             display: flex; align-items: center; gap: 0.75rem; position: sticky; top: 0; z-index: 10; }
+    header h1 { font-size: 0.95rem; font-weight: 600; }
+    #btn-logout { margin-left: auto; background: #1e3a8a; color: white; border: none;
+                  padding: 0.3rem 0.8rem; border-radius: 6px; cursor: pointer; font-size: 0.8rem; display: none; }
+
+    /* LOGIN */
+    #login-wrap { max-width: 320px; margin: 5rem auto; background: white;
+                  border-radius: 12px; border: 1px solid #e2e8f0; padding: 1.5rem; }
+    #login-wrap h2 { font-size: 1rem; font-weight: 600; text-align: center; margin-bottom: 1rem; }
+    #login-wrap input { width: 100%; border: 1px solid #cbd5e1; border-radius: 8px;
+                        padding: 0.5rem 0.75rem; font-size: 0.875rem; outline: none; }
+    #login-wrap input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px #bfdbfe; }
+    #login-wrap button { margin-top: 0.75rem; width: 100%; background: #1e40af; color: white;
+                         border: none; border-radius: 8px; padding: 0.55rem; font-size: 0.875rem;
+                         font-weight: 500; cursor: pointer; }
+    #login-wrap button:hover { background: #1d4ed8; }
+    .hint { font-size: 0.75rem; color: #64748b; text-align: center; margin-top: 0.5rem; }
+
+    /* PANEL */
+    #panel { display: none; }
+
+    .toolbar { background: white; border-bottom: 1px solid #e2e8f0;
+               padding: 0.65rem 1rem; display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+    .toolbar h2 { font-size: 0.85rem; font-weight: 600; color: #334155; }
+    .week-nav { display: flex; align-items: center; gap: 0.4rem; margin-left: auto; }
+    .week-nav button { border: 1px solid #cbd5e1; background: white; border-radius: 6px;
+                       padding: 0.3rem 0.65rem; font-size: 0.8rem; cursor: pointer; }
+    .week-nav button:hover { background: #f1f5f9; }
+    #week-label { font-size: 0.8rem; font-weight: 600; color: #1e40af; min-width: 180px; text-align: center; }
+
+    .legend { display: flex; gap: 1rem; padding: 0.5rem 1rem; font-size: 0.75rem; color: #475569; flex-wrap: wrap; }
+    .legend span { display: flex; align-items: center; gap: 0.3rem; }
+    .dot { width: 10px; height: 10px; border-radius: 3px; }
+    .dot-free { background: #e2e8f0; border: 1px solid #cbd5e1; }
+    .dot-avail { background: #bbf7d0; border: 1px solid #86efac; }
+    .dot-booked { background: #fde68a; border: 1px solid #fcd34d; }
+
+    /* GRID */
+    .grid-wrap { overflow-x: auto; padding: 0 0.5rem 1.5rem; }
+    .grid { display: grid; min-width: 600px; border: 1px solid #e2e8f0; border-radius: 10px;
+            overflow: hidden; background: white; }
+
+    /* header row: time + 7 days */
+    .grid-head { display: contents; }
+    .gh-cell { background: #f8fafc; padding: 0.5rem 0.25rem; text-align: center;
+               font-size: 0.72rem; font-weight: 600; color: #475569;
+               border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; z-index: 5; }
+    .gh-cell.today { color: #1e40af; background: #eff6ff; }
+
+    /* body rows */
+    .grid-body { display: contents; }
+    .time-cell { background: #f8fafc; padding: 0.2rem 0.4rem; font-size: 0.68rem; color: #64748b;
+                 border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0;
+                 text-align: right; white-space: nowrap;
+                 display: flex; align-items: center; justify-content: flex-end; }
+    .time-cell.hour { font-weight: 700; color: #334155; }
+
+    .slot-cell { border-right: 1px solid #f1f5f9; border-bottom: 1px solid #e2e8f0;
+                 cursor: pointer; transition: background 0.1s; min-height: 22px;
+                 display: flex; align-items: center; justify-content: center; font-size: 0.65rem; }
+    .slot-cell:last-child { border-right: none; }
+    .slot-cell.past { background: #f8fafc; cursor: not-allowed; }
+    .slot-cell.unavailable { background: white; }
+    .slot-cell.unavailable:hover { background: #f0fdf4; }
+    .slot-cell.available { background: #dcfce7; }
+    .slot-cell.available:hover { background: #bbf7d0; }
+    .slot-cell.booked { background: #fef9c3; cursor: not-allowed; color: #92400e; font-weight: 600; }
+    .slot-cell.loading-cell { opacity: 0.5; pointer-events: none; }
+
+    .msg { font-size: 0.78rem; padding: 0.4rem 0.8rem; border-radius: 6px;
+           position: fixed; bottom: 1rem; right: 1rem; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .msg-ok { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+    .msg-err { background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; }
+
+    .stats { font-size: 0.78rem; color: #64748b; padding: 0 1rem 0.25rem; }
+  </style>
+</head>
+<body>
+
+<header>
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/>
+    <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+  </svg>
+  <h1>Painel do Médico — Horários</h1>
+  <button id="btn-logout" onclick="logout()">Sair</button>
+</header>
+
+<!-- LOGIN -->
+<div id="login-wrap">
+  <h2>🔐 Acesso restrito</h2>
+  <input id="api-key-input" type="password" placeholder="Chave de acesso" autocomplete="current-password" />
+  <button onclick="doLogin()">Entrar</button>
+  <p class="hint">Introduza a chave de administração.</p>
+  <div id="login-msg" style="margin-top:0.5rem;font-size:0.78rem"></div>
+</div>
+
+<!-- PAINEL -->
+<div id="panel">
+  <div class="toolbar">
+    <h2>Clique num horário para activar/desactivar</h2>
+    <div class="week-nav">
+      <button onclick="changeWeek(-1)">‹</button>
+      <span id="week-label"></span>
+      <button onclick="changeWeek(1)">›</button>
+    </div>
+  </div>
+  <div class="legend">
+    <span><span class="dot dot-free"></span> Indisponível</span>
+    <span><span class="dot dot-avail"></span> Disponível para marcação</span>
+    <span><span class="dot dot-booked"></span> Marcado por paciente</span>
+  </div>
+  <div class="stats" id="stats"></div>
+  <div class="grid-wrap">
+    <div class="grid" id="cal-grid" style="grid-template-columns: 42px repeat(7, 1fr)"></div>
+  </div>
+</div>
+
+<div id="toast" class="msg" style="display:none"></div>
+
+<script>
+const API = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+  ? 'http://localhost:8000' : ''
+
+let apiKey = sessionStorage.getItem('medico_key') || ''
+let weekOffset = 0   // 0 = current week starting from tomorrow
+let serverSlots = [] // slots from backend
+
+const DAYS_PT = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb']
+const MONTHS_PT = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez']
+
+// Working hours: 7:00 to 22:00, 15-min slots
+const START_H = 7, END_H = 22
+const SLOTS_PER_DAY = (END_H - START_H) * 4  // 60 slots
+
+// ----- Auth -----
+async function doLogin() {
+  const key = document.getElementById('api-key-input').value.trim()
+  if (!key) return
+  try {
+    const r = await fetch(`${API}/availability/slots`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({api_key: key, datetimes: []})
+    })
+    if (r.status === 403) { setLoginMsg('Chave incorrecta.', true); return }
+    apiKey = key
+    sessionStorage.setItem('medico_key', key)
+    showPanel()
+  } catch { setLoginMsg('Erro ao ligar ao servidor.', true) }
+}
+
+function setLoginMsg(txt, err=false) {
+  const el = document.getElementById('login-msg')
+  el.textContent = txt
+  el.style.color = err ? '#dc2626' : '#16a34a'
+}
+
+function logout() {
+  sessionStorage.removeItem('medico_key'); apiKey = ''
+  document.getElementById('login-wrap').style.display = ''
+  document.getElementById('panel').style.display = 'none'
+  document.getElementById('btn-logout').style.display = 'none'
+}
+
+function showPanel() {
+  document.getElementById('login-wrap').style.display = 'none'
+  document.getElementById('panel').style.display = 'block'
+  document.getElementById('btn-logout').style.display = ''
+  loadAndRender()
+}
+
+// ----- Date helpers -----
+function weekStart(offset) {
+  // Start from tomorrow (since patients need 24h notice)
+  const d = new Date()
+  d.setHours(0,0,0,0)
+  d.setDate(d.getDate() + 1 + offset * 7)
+  return d
+}
+
+function addMinutes(date, mins) {
+  return new Date(date.getTime() + mins * 60000)
+}
+
+function isoLocal(dt) {
+  // Local ISO string without seconds
+  const pad = n => String(n).padStart(2,'0')
+  return `${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}:00`
+}
+
+function slotKey(dt) {
+  // Key for matching: YYYY-MM-DDTHH:MM (ignore seconds/tz for matching)
+  const s = new Date(dt).toISOString()
+  return s.slice(0,16)
+}
+
+// ----- Data -----
+async function loadAndRender() {
+  try {
+    const r = await fetch(`${API}/availability/slots/all?api_key=${encodeURIComponent(apiKey)}`)
+    if (r.ok) serverSlots = await r.json()
+    else serverSlots = []
+  } catch { serverSlots = [] }
+  renderGrid()
+}
+
+// ----- Grid -----
+function renderGrid() {
+  const grid = document.getElementById('cal-grid')
+  grid.innerHTML = ''
+  const ws = weekStart(weekOffset)
+  const we = new Date(ws); we.setDate(we.getDate() + 6)
+
+  // Week label
+  document.getElementById('week-label').textContent =
+    `${ws.getDate()} ${MONTHS_PT[ws.getMonth()]} – ${we.getDate()} ${MONTHS_PT[we.getMonth()]} ${we.getFullYear()}`
+
+  // Build lookup: slotKey -> slot object
+  const lookup = {}
+  for (const s of serverSlots) lookup[slotKey(s.datetime)] = s
+
+  // Count stats
+  let nAvail = 0, nBooked = 0
+  for (const s of serverSlots) {
+    if (s.booked) nBooked++; else nAvail++
+  }
+  document.getElementById('stats').textContent =
+    `Esta semana: ${nAvail} horário(s) disponível(eis), ${nBooked} marcado(s).`
+
+  // Header row: empty + 7 days
+  const now = new Date()
+  const emptyHead = document.createElement('div')
+  emptyHead.className = 'gh-cell'
+  grid.appendChild(emptyHead)
+
+  const days = []
+  for (let d = 0; d < 7; d++) {
+    const day = new Date(ws); day.setDate(ws.getDate() + d)
+    days.push(day)
+    const cell = document.createElement('div')
+    cell.className = 'gh-cell' + (day.toDateString() === now.toDateString() ? ' today' : '')
+    cell.textContent = `${DAYS_PT[day.getDay()]} ${day.getDate()}/${day.getMonth()+1}`
+    grid.appendChild(cell)
+  }
+
+  // Time rows
+  const cutoff = new Date(Date.now() + 24*60*60*1000) // 24h from now
+
+  for (let i = 0; i < SLOTS_PER_DAY; i++) {
+    const h = START_H + Math.floor(i / 4)
+    const m = (i % 4) * 15
+    const isHour = m === 0
+
+    // Time label
+    const timeCell = document.createElement('div')
+    timeCell.className = 'time-cell' + (isHour ? ' hour' : '')
+    timeCell.textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`
+    grid.appendChild(timeCell)
+
+    // 7 day cells
+    for (let d = 0; d < 7; d++) {
+      const dt = new Date(days[d])
+      dt.setHours(h, m, 0, 0)
+      const key = slotKey(dt.toISOString())
+      const serverSlot = lookup[key]
+      const isPast = dt < cutoff
+
+      const cell = document.createElement('div')
+      cell.className = 'slot-cell'
+      cell.title = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`
+
+      if (isPast) {
+        cell.classList.add('past')
+      } else if (serverSlot && serverSlot.booked) {
+        cell.classList.add('booked')
+        cell.textContent = '✓'
+        cell.title += ' — marcado'
+      } else if (serverSlot) {
+        cell.classList.add('available')
+        cell.dataset.slotId = serverSlot.id
+        cell.dataset.iso = isoLocal(dt)
+        cell.addEventListener('click', toggleSlot)
+      } else {
+        cell.classList.add('unavailable')
+        cell.dataset.iso = isoLocal(dt)
+        cell.addEventListener('click', toggleSlot)
+      }
+
+      grid.appendChild(cell)
+    }
+  }
+}
+
+// ----- Toggle slot -----
+async function toggleSlot(e) {
+  const cell = e.currentTarget
+  if (cell.classList.contains('loading-cell')) return
+
+  cell.classList.add('loading-cell')
+
+  if (cell.classList.contains('available')) {
+    // Remove slot
+    const id = cell.dataset.slotId
+    try {
+      await fetch(`${API}/availability/slots/${id}?api_key=${encodeURIComponent(apiKey)}`, {method:'DELETE'})
+      toast('Horário removido.')
+    } catch { toast('Erro ao remover.', true); cell.classList.remove('loading-cell'); return }
+  } else {
+    // Add slot
+    const iso = cell.dataset.iso
+    try {
+      const r = await fetch(`${API}/availability/slots`, {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({api_key: apiKey, datetimes: [iso]})
+      })
+      if (!r.ok) { toast('Erro ao adicionar.', true); cell.classList.remove('loading-cell'); return }
+      toast('Horário activado.')
+    } catch { toast('Erro ao adicionar.', true); cell.classList.remove('loading-cell'); return }
+  }
+
+  await loadAndRender()
+}
+
+function changeWeek(delta) { weekOffset += delta; renderGrid() }
+
+// ----- Toast -----
+let toastTimer
+function toast(msg, err=false) {
+  const el = document.getElementById('toast')
+  el.textContent = msg
+  el.className = `msg ${err ? 'msg-err' : 'msg-ok'}`
+  el.style.display = 'block'
+  clearTimeout(toastTimer)
+  toastTimer = setTimeout(() => el.style.display = 'none', 3000)
+}
+
+// Init
+document.getElementById('api-key-input').addEventListener('keydown', e => { if(e.key==='Enter') doLogin() })
+if (apiKey) showPanel()
+</script>
+</body>
+</html>
